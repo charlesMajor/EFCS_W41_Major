@@ -1,0 +1,100 @@
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+type Role {
+  id: ID!
+  name: String!
+  users: [User!]! @hasMany
+}
+
+type User {
+  id: ID!
+  login: String!
+  password: String!
+  email: String!
+  last_name: String!
+  first_name: String!
+  role: Role! @belongsTo 
+  critics: [Critic!]! @hasMany
+}
+
+type Critic {
+  id: ID!
+  score: Float!
+  comment: String!
+  user: User! @belongsTo
+  film: Film! @belongsTo
+}
+
+type Language {
+  id: ID!
+  name: String!
+  films: [Film!]! @hasMany
+}
+
+type Actor {
+  id: ID!
+  last_name: String!
+  first_name: String!
+  birthdate: String!
+  films: [Film!]! @belongsToMany
+}
+
+type Film {
+  id: ID!
+  title: String!
+  release_year: String!
+  length: Int!
+  description: String!
+  rating: String!
+  special_features: String!
+  image: String!
+  language: Language! @belongsTo
+  actors: [Actor!]! @hasMany
+  critics: [Critic!]! @hasMany
+  stat: Stat! @belongsTo
+}
+
+type Stat {
+  id: ID!
+  score: Float!
+  votes: Int!
+  film: Film! @belongsTo
+}
+
+type Query {
+  film(id: ID! @eq): Film @find
+  films(
+      where: _ @whereConditions(columns: ["title", "description", "release_year", "length"])
+    ) : [Film!]! @paginate(defaultCount: 10)
+
+  me: User @auth    
+}
+
+type Mutation {
+  createCritic(input: CreateCriticInput! @spread): Stat! @guard
+  createActor(input: CreateActorInput! @spread): Actor! @can(ability: "create") @create @guard
+}
+
+input CreateCriticInput {
+  score: Float!
+  comment: String!
+  film: Int!
+}
+
+input CreateActorInput {
+  last_name: String!
+  first_name: String!
+  birthdate: String!
+  films: CreateFilmBelongsToMany
+}
+
+input CreateFilmBelongsToMany {
+  connect: [ID!]
+  update: [UpdateFilmInput!]
+}
+
+input UpdateFilmInput {
+  id: ID!
+  image: String!
+}
